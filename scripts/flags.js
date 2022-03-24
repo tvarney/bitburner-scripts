@@ -32,6 +32,7 @@
  *   `$ alias deploy='run /scripts/deploy.js --'`
  */
 
+
 /**
  * Interface for classes which parse args
  * 
@@ -214,7 +215,7 @@
      */
 	initialValue() {
 		if(this._parser != null) {
-			return this._parser.initialValue(this.defaultValue)
+			return this._parser.initialValue(this._default)
 		}
 		return false
 	}
@@ -260,7 +261,7 @@ export class StringParser {
 	 * @returns {any}
 	 */
 	initialValue(val = null) {
-		return null
+		return val
 	}
 
 	/**
@@ -299,7 +300,11 @@ export class NumberParser {
 	 * @returns {any}
 	 */
 	initialValue(val) {
-		return null
+		try {
+			return parseInt(val)
+		}catch(ex) {
+			return null
+		}
 	}
 
 	/**
@@ -443,7 +448,7 @@ export class Parser {
 	 * Parse the given arguments, throwing errors on issues
 	 * 
 	 * @param {string[]} args
-	 * @returns {{exit: boolean, data: Object.<string, number>, args: any[]}}
+	 * @returns {{exit: boolean, flags: Object.<string, number>, args: any[]}}
 	 */
 	parseRaw(args) {
 		// Initialize data

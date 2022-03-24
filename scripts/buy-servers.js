@@ -46,6 +46,7 @@ class Purchaser {
             let newBox = this.ns.purchaseServer(name, this.baseRAM)
             this.ns.tprintf("INFO Purchased %v GB server %s", this.baseRAM, newBox)
             if(this.script) {
+                await this.ns.scp(this.script, newBox)
                 this.ns.exec(this.script, newBox, threads, ...this.args)
                 this.ns.tprintf("INFO Exec `%s %s` on %s with %v threads", this.script, JSON.stringify(this.args), newBox, threads)
             }
@@ -89,6 +90,7 @@ class Purchaser {
                 this.ns.tprintf("INFO Upgraded %s to %v GB server", name, ram)
                 if(this.script) {
                     // Start the script on this server
+                    await this.ns.scp(this.script, name)
                     this.ns.exec(this.script, name, threads, ...this.args)
                     this.ns.tprintf("INFO Exec `%s %s` on %s with %v threads", this.script, JSON.stringify(this.args), name, threads)
                 }

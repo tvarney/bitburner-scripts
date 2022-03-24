@@ -43,14 +43,19 @@ function openServer(ns, hostname, available) {
 		switch(prog) {
 		case "BruteSSH.exe":
 			ns.brutessh(hostname)
+			break
 		case "FTPCrack.exe":
 			ns.ftpcrack(hostname)
+			break
 		case "relaySMTP.exe":
 			ns.relaysmtp(hostname)
+			break
 		case "HTTPWorm.exe":
 			ns.httpworm(hostname)
+			break
 		case "SQLInject.exe":
 			ns.sqlinject(hostname)
+			break
 		}
 	}
 	// At this point, the server should be nukable, so nuke it and return true

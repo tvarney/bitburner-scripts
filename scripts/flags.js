@@ -292,6 +292,49 @@ export class NumberParser {
 	 * @return {any} The new value of the flag
 	 */
 	accumulate(current, ...args) {
+		return parseFloat(args[0])
+	}
+
+	/**
+	 * @param {?string} val
+	 * @returns {any}
+	 */
+	initialValue(val) {
+		try {
+			return parseFloat(val)
+		}catch(ex) {
+			return null
+		}
+	}
+
+	/**
+	 * @returns {string}
+	 */
+	argsString() {
+		return "<number>"
+	}
+}
+
+/**
+ * A parser for integer arguments
+ * 
+ * @implements FlagArgParser
+ */
+export class IntegerParser {
+	/**
+	 * @return {number} The number of args to consume
+	 */
+	args() {
+		return 1
+	}
+
+	/**
+	 * @param {any} current The current value in the data object
+	 * @param {string[]} args The args to be accumulated
+	 * 
+	 * @return {any} The new value of the flag
+	 */
+	accumulate(current, ...args) {
 		return parseInt(args[0])
 	}
 
@@ -311,7 +354,7 @@ export class NumberParser {
 	 * @returns {string}
 	 */
 	argsString() {
-		return "<number>"
+		return "<integer>"
 	}
 }
 
@@ -368,6 +411,18 @@ export class Parser {
 	 */
 	number(name) {
 		let f = new Flag(name, new NumberParser())
+		this.flags.push(f)
+		return f
+	}
+
+	/**
+	 * Create and return a new flag which takes a single integer
+	 * 
+	 * @param {string} name The name of the flag
+	 * @returns {Flag} A flag which parses an integer argument
+	 */
+	integer(name) {
+		let f = new Flag(name, new IntegerParser())
 		this.flags.push(f)
 		return f
 	}

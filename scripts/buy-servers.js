@@ -44,10 +44,11 @@ class Purchaser {
                 await this.ns.sleep(this.delay)
             }
             let newBox = this.ns.purchaseServer(name, this.baseRAM)
+            this.ns.tprintf("INFO Purchased %v GB server %s", this.baseRAM, newBox)
             if(this.script) {
                 this.ns.exec(this.script, newBox, threads, ...this.args)
+                this.ns.tprintf("INFO Exec `%s %s` on %s with %v threads", this.script, JSON.stringify(this.args), newBox, threads)
             }
-            this.ns.tprintf("INFO Purchased %v GB server %s", this.baseRAM, newBox)
         }
     }
 
@@ -70,7 +71,7 @@ class Purchaser {
             // Iterate the servers, upgrading as possible
             for(let name of servers) {
                 let serverRam = this.ns.getServerMaxRam(name)
-                if(serverRam > ram) {
+                if(serverRam >= ram) {
                     // Skip any server with more RAM than we're buying now
                     continue
                 }
@@ -85,11 +86,12 @@ class Purchaser {
                 this.ns.deleteServer(name)
                 // Purchase new server
                 this.ns.purchaseServer(name, ram)
+                this.ns.tprintf("INFO Upgraded %s to %v GB server", name, ram)
                 if(this.script) {
                     // Start the script on this server
                     this.ns.exec(this.script, name, threads, ...this.args)
+                    this.ns.tprintf("INFO Exec `%s %s` on %s with %v threads", this.script, JSON.stringify(this.args), name, threads)
                 }
-                this.ns.tprintf("INFO Upgraded %s to %v GB server", name, ram)
             }
         }
     }
@@ -101,14 +103,12 @@ class Purchaser {
 export async function main(ns) {
     let parser = new flags.Parser(ns)
     parser.number("money-factor").shortOpt('m').default("0.9")
-    parser.number("max-threads").shortOpt('T').default("-1")
-    parser.number("delay").shortOpt('d').default("1000")
-    parser.number("base-ram").shortOpt('R').default("8")
+    parser.integer("max-threads").shortOpt('T').default("-1")
+    parser.integer("delay").shortOpt('d').default("1000")
+    parser.integer("base-ram").shortOpt('R').default("8")
     parser.string("base-name").shortOpt('N').default("pserv-")
-    ns.tprint(JSON.stringify(parser))
 
     let flagdata = parser.parse(ns.args)
-    ns.tprint(flagdata)
     // Handle args
     const script = (flagdata.args.length > 0) ? flagdata.args.shift() : null
     const scriptargs = flagdata.args

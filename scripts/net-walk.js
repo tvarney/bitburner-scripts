@@ -5,8 +5,8 @@
  * @param {NS} ns
  * @param {function(string)} callback The callback function to use
  */
- export function walk(ns, callback) {
-	walkImpl(ns, "home", "home", callback)
+ export async function walk(ns, callback) {
+	await walkImpl(ns, "home", "home", callback)
 }
 
 /**
@@ -17,8 +17,8 @@
  * @param {string} root The initial node to walk from
  * @param {function(string)} callback The callback function to use
  */
-export function walkFrom(ns, root, callback) {
-    walkImpl(ns, root, root, callback)
+export async function walkFrom(ns, root, callback) {
+    await walkImpl(ns, root, root, callback)
 }
 
 /**
@@ -32,15 +32,15 @@ export function walkFrom(ns, root, callback) {
  * @param {string} parent
  * @param {function(string)} callback
  */
-export function walkImpl(ns, hostname, parent, callback) {
+export async function walkImpl(ns, hostname, parent, callback) {
 	if(hostname != parent) {
-		callback(hostname)
+		await callback(hostname)
 	}
 
 	const children = ns.scan(hostname)
 	for(let c of children) {
 		if(c != parent) {
-			walkImpl(ns, c, hostname, callback)
+			await walkImpl(ns, c, hostname, callback)
 		}
 	}
 }
@@ -52,9 +52,9 @@ export function walkImpl(ns, hostname, parent, callback) {
  * @param {string} root
  * @returns {string[]} The list of servers available, scanning from root
  */
-export function scanAll(ns, root="home") {
+export async function scanAll(ns, root="home") {
 	let servers = []
-	walkImpl(ns, root, (s) => servers.push(s))
+    await walkImpl(ns, root, root, (s) => servers.push(s))
 	return servers
 }
 
@@ -91,7 +91,7 @@ export function scanAll(ns, root="home") {
  * @param {function(Node) => any} callback A callback function used to populate extra info
  * @returns {Node} A Node representing the given server
  */
-export function scanTree(ns, server="home", callback=null) {
+export async function scanTree(ns, server="home", callback=null) {
     return scanTreeImpl(ns, server, server, callback)
 }
 
@@ -102,13 +102,16 @@ export function scanTree(ns, server="home", callback=null) {
  * @param {string} server 
  * @param {string} parent 
  * @param {function(Node) => any} callback 
+ * @returns {Node} A node representing the given server
  */
-function scanTreeImpl(ns, server, parent, callback) {
-	ns.tprint("Children of '" + server +"' (parent: '" + parent + "'): " + JSON.stringify(ns.scan(server).filter((value) => value != parent)))
-	let children = ns.scan(server).filter((value) => value != parent).map((name) => scanTreeImpl(ns, name, server, callback))
+async function scanTreeImpl(ns, server, parent, callback) {
+    let m = async function(name) {
+        await scanTreeImpl(ns, name, server, callback)
+    }
+	let children = await ns.scan(server).filter((value) => value != parent).map(m)
     let n = new Node(server, parent, children)
     if(callback) {
-        n.info = callback(n)
+        n.info = await callback(n)
     }
     return n
 }

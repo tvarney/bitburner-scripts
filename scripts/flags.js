@@ -367,9 +367,18 @@ export class Parser {
 		return f
 	}
 
-    printHelp() {
+	/**
+	 * Print help message
+	 * 
+	 * @param {?string} reason An extra message to write before the help output
+	 */
+    printHelp(reason = null) {
+		let msg = "\n"
+		if(reason) {
+			msg += reason + "\n\n"
+		}
 		// TODO: add positional arguments to Usage statement
-		let msg = "\nUsage: run " + this.name + " [OPTIONS]\n"
+		msg += "Usage: run " + this.name + " [OPTIONS]\n"
 		if(this.description) {
 			msg += "\n" + this.description + "\n"
 		}
@@ -408,10 +417,25 @@ export class Parser {
 
 	parse(args) {
 		try {
-			return this.parseRaw(args)
+			let data = this.parseRaw(args)
+			// Exit if the parser flag for it is set and the returned data
+			// indicates we should
+			if(data.exit && this.exit) {
+				this.ns.exit()
+			}
+			// Otherwise return the data
+			return data
 		}catch(ex) {
-			this.ns.tprint(ex)
-			this.printHelp()
+			this.printHelp("" + ex)
+			if(this.exit) {
+				// Force an exit
+				this.ns.exit()
+			}
+			return {
+				"exit": true,
+				"flags": {},
+				"args": [],
+			}
 		}
 	}
 
@@ -419,6 +443,7 @@ export class Parser {
 	 * Parse the given arguments, throwing errors on issues
 	 * 
 	 * @param {string[]} args
+	 * @returns {{exit: boolean, data: Object.<string, number>, args: any[]}}
 	 */
 	parseRaw(args) {
 		// Initialize data
@@ -428,7 +453,7 @@ export class Parser {
 		let lflags = {}
 		for(let f of this.flags) {
 			flagValues[f._long] = f.initialValue()
-			if(f.sFlag != null) {
+			if(f._short != null) {
 				sflags[f._short] = f
 			}
 			lflags[f._long] = f
@@ -488,7 +513,9 @@ export class Parser {
                     flag.accumulate(flagValues, ...fArgs)
                     // Move our index to the last arg
                     i += (nargs - extra)
-                }
+                }else {
+					flag.accumulate(flagValues)
+				}
                 // Let the flag perform an action if necessary
                 flag.doAction()
 				if(flag._forceExit) {
@@ -504,7 +531,7 @@ export class Parser {
 				while(j < arg.length) {
 					const flagChar = arg[j]
 					if(!(flagChar in sflags)) {
-						throw new Error("unknown short option '-" + flagChar + "'")
+						throw new Error("unknown short option '-" + flagChar + "' - available" + JSON.stringify(sflags))
 					}
 					const flag = sflags[flagChar]
 					const nargs = flag.args()
@@ -527,15 +554,18 @@ export class Parser {
 						}
 						flag.accumulate(flagValues, ...fArgs)
 						i += (nargs-extra)
+					}else {
+						flag.accumulate(flagValues)
 					}
 					flag.doAction()
 					if(flag._forceExit) {
 						return {
 							'exit': true,
-							'data': {},
+							'flags': {},
 							'args': [],
 						}
 					}
+					j++
 				}
 				i++
 			}else {

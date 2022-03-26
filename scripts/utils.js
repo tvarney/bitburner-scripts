@@ -1,24 +1,4 @@
 
-var ns
-
-/**
- * 
- * @param {NS} newNS 
- */
-export function initDebug(newNS) {
-    ns = newNS
-}
-
-/**
- * 
- * @param {any} msg 
- */
-export function debug(msg) {
-    if(ns) {
-        ns.tprint("DEBUG " + msg)
-    }
-}
-
 /**
  * Get total number of threads that can be used
  * 

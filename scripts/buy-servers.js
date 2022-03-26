@@ -1,5 +1,9 @@
 import * as flags from "/scripts/flags.js"
-import * as utils from "/scripts/utils.js"
+
+import {
+    leftpad,
+    getThreads
+} from "./utils.js"
 
 const MaxPower = 20
 
@@ -27,11 +31,11 @@ class Purchaser {
         const price = this.ns.getPurchasedServerCost(this.baseRAM)
         const sWidth = this.maxServers.toString().length
         const scriptMem = this.script ? this.ns.getScriptRam(this.script) : 1
-        const threads = utils.getThreads(this.baseRAM, scriptMem, this.maxThreads)
+        const threads = getThreads(this.baseRAM, scriptMem, this.maxThreads)
 
         let names = []
         for(let i = 0; i < this.maxServers; ++i) {
-            names.push(this.basename + utils.leftpad(i.toString(), "0", sWidth))
+            names.push(this.basename + leftpad(i.toString(), "0", sWidth))
         }
 
         for(let name of names) {
@@ -61,7 +65,7 @@ class Purchaser {
             let ram = Math.pow(2, ramPower)
 
             // Get threads we can run
-            let threads = utils.getThreads(ram, scriptMem, this.maxThreads)
+            let threads = getThreads(ram, scriptMem, this.maxThreads)
 
             // Get price for the RAM we want to do this iteration
             let price = this.ns.getPurchasedServerCost(ram)

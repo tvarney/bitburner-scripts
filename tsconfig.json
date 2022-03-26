@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "outDir": "./out",
+        "typeRoots": ["./types/"]
+    },
+    "include": [
+        "scripts/*",
+        "types/*"
+    ],
+    "exclude": [
+        "./out/**"
+    ]
+}

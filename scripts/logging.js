@@ -12,10 +12,10 @@ export class LogLevel {
      * None indicates an invalid log level which is skipped.
      */
     static None = new LogLevel("", "")
-    static Debug = new LogLevel("debug", "INFO<DEBUG>")
-    static Info = new LogLevel("info", "INFO")
-    static Warn = new LogLevel("warn", "WARN")
-    static Error = new LogLevel("error", "ERROR")
+    static Debug = new LogLevel("debug", "INFO<DEBUG> ")
+    static Info = new LogLevel("info", "INFO ")
+    static Warn = new LogLevel("warn", "WARN ")
+    static Error = new LogLevel("error", "ERROR ")
 
     /**
      * Create a new LogLevel with the given name and prefix
@@ -98,6 +98,7 @@ export class Logger {
      */
     termVerbosity(value = -1) {
         if(value >= 0) {
+            this._ns?.tprintf("Verbosity: %v", value)
             this._termVerbosity = value
         }
         return this._termVerbosity
@@ -289,6 +290,90 @@ export class Logger {
     }
 
     /**
+     * Write a debug message to the terminal
+     * 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tDebug(fmt, ...args) {
+        this.tLog(1, LogLevel.Debug, fmt, ...args)
+    }
+
+    /**
+     * Write a debug message of the given verbosity to the terminal
+     * 
+     * @param {number} verbosity
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tDebugV(verbosity, fmt, ...args) {
+        this.tLog(verbosity, LogLevel.Debug, fmt, ...args)
+    }
+
+    /**
+     * Write an info message to the terminal
+     * 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tInfo(fmt, ...args) {
+        this.tLog(1, LogLevel.Info, fmt, ...args)
+    }
+
+    /**
+     * Write an info message of the given verbosity to the terminal
+     * 
+     * @param {number} verbosity 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tInfoV(verbosity, fmt, ...args) {
+        this.tLog(verbosity, LogLevel.Info, fmt, ...args)
+    }
+
+    /**
+     * Write a warning message to the terminal
+     * 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tWarn(fmt, ...args) {
+        this.tLog(1, LogLevel.Warn, fmt, ...args)
+    }
+
+    /**
+     * Write a warning message of the given verbosity to the terminal
+     * 
+     * @param {number} verbosity 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tWarnV(verbosity, fmt, ...args) {
+        this.tLog(verbosity, LogLevel.Warn, fmt, ...args)
+    }
+
+    /**
+     * Write an error message to the terminal
+     * 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tError(fmt, ...args) {
+        this.tLog(1, LogLevel.Error, fmt, ...args)
+    }
+
+    /**
+     * Write an error message of the given verbosity to the terminal
+     * 
+     * @param {number} verbosity 
+     * @param {string} fmt 
+     * @param {...any} args 
+     */
+    tErrorV(verbosity, fmt, ...args) {
+        this.tLog(verbosity, LogLevel.Error, fmt, ...args)
+    }
+
+    /**
      * Write a log message to the terminal
      * 
      * If the given verbosity is higher than the logger verbosity or the
@@ -324,7 +409,7 @@ export class Logger {
      */
     tLogRaw(verbosity, level, fmt, ...args) {
         if(this._ns && this._shouldOutput(this._termVerbosity, verbosity, level, this._termFlags)) {
-            this._ns.tprintf(fmt, ...args)
+            this._ns.tprintf(level.prefix + fmt, ...args)
         }
     }
 
@@ -364,7 +449,7 @@ export class Logger {
      */
     lLogRaw(verbosity, level, fmt, ...args) {
         if(this._ns && this._shouldOutput(this._logVerbosity, verbosity, level, this._logFlags)) {
-            this._ns.printf(fmt, ...args)
+            this._ns.printf(level.prefix + fmt, ...args)
         }
     }
 }
@@ -387,6 +472,7 @@ var global = new Logger(null)
 export function InitGlobal(ns) {
     // Set the NS handle inside our global
     global._ns = ns
+    ns?.tprint("Set NS instance on global logger")
 }
 
 /**

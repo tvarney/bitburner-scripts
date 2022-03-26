@@ -34,7 +34,6 @@
  *   `$ alias deploy='run /scripts/deploy.js --'`
  */
 
-
 /**
  * Interface for classes which parse args
  * 
@@ -376,6 +375,57 @@ export class IntegerParser {
 }
 
 /**
+ * A parser for integer arguments
+ * 
+ * @implements FlagArgParser
+ */
+class CounterParser {
+	/**
+	 * 
+	 * @returns {number} The number of args
+	 */
+	args() {
+		return 0
+	}
+
+	/**
+	 * Get the initial value for the counter
+	 * 
+	 * @param {?string} val 
+	 */
+	initialValue(val) {
+		if(!val) {
+			return 0
+		}
+		try {
+			return parseInt(val)
+		}catch(ex) {
+			return 0
+		}
+	}
+
+	/**
+	 * Add values to the current counter
+	 * 
+	 * @param {any} current
+	 * @param {...string} args
+	 * @return {any}
+	 */
+	accumulate(current, ...args) {
+		return Number(current) + 1
+	}
+
+	/**
+	 * Get the string representation of any arguments this flag accepts
+	 * 
+	 * @returns {string}
+	 */
+	argsString() {
+		return ""
+	}
+}
+
+/**
  * Command line argument parser class
  * 
  * @member {NS} ns The bitburner namespace object to use
@@ -391,7 +441,7 @@ export class Parser {
 		this.description = ""
 		this.name = (name == null) ? ns.getScriptName() : name
 		this.flags = [
-			new Flag("help").shortOpt("h").action(() => this.printHelp()).forceExit(true)
+			new Flag("help").shortOpt("h").action(() => this.printHelp()).forceExit(true).help("Print this message and exit")
 		]
 		this.argsString = ""
         this.exit = true
@@ -446,6 +496,18 @@ export class Parser {
 	}
 
 	/**
+	 * Create and return a new flag which counts how often it was specified.
+	 * 
+	 * @param {string} name 
+	 * @returns {Flag} A flag which counts how often it appeared
+	 */
+	counter(name) {
+		let f = new Flag(name, new CounterParser())
+		this.flags.push(f)
+		return f
+	}
+
+	/**
 	 * Print help message
 	 * 
 	 * @param {?string} reason An extra message to write before the help output
@@ -493,6 +555,9 @@ export class Parser {
 				msg += " " + argsString
 			}
 			msg += "\n"
+			if(f._help) {
+				msg += "      " + f._help + "\n"
+			}
 		}
 		this.ns.tprint(msg)
     }

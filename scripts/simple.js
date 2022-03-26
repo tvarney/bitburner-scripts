@@ -40,7 +40,10 @@ export async function main(ns) {
 		ns.exit()
 	}
 
-	const hostname = data['server']
+	let hostname = data['server']
+	if(hostname == "self") {
+		hostname = ns.getHostname()
+	}
 	const maxSecurity = ns.getServerMinSecurityLevel(hostname) + data['security-offset']
 	const minMoney = ns.getServerMaxMoney(hostname) * data['money-factor']
 	while(true) {

@@ -1,4 +1,7 @@
 {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
     "bitburner.scriptRoot": "./",
     "bitburner.showPushSuccessNotification": true,
+    "bitburner.authToken": "",
 }

@@ -6,7 +6,7 @@
  * @param {function(string)} callback The callback function to use
  */
  export async function walk(ns, callback) {
-	await walkImpl(ns, "home", "home", callback)
+    await walkImpl(ns, "home", "home", callback)
 }
 
 /**
@@ -33,16 +33,16 @@ export async function walkFrom(ns, root, callback) {
  * @param {function(string)} callback
  */
 export async function walkImpl(ns, hostname, parent, callback) {
-	if(hostname != parent) {
-		await callback(hostname)
-	}
+    if(hostname != parent) {
+        await callback(hostname)
+    }
 
-	const children = ns.scan(hostname)
-	for(let c of children) {
-		if(c != parent) {
-			await walkImpl(ns, c, hostname, callback)
-		}
-	}
+    const children = ns.scan(hostname)
+    for(let c of children) {
+        if(c != parent) {
+            await walkImpl(ns, c, hostname, callback)
+        }
+    }
 }
 
 /**
@@ -53,9 +53,9 @@ export async function walkImpl(ns, hostname, parent, callback) {
  * @returns {string[]} The list of servers available, scanning from root
  */
 export async function scanAll(ns, root="home") {
-	let servers = []
+    let servers = []
     await walkImpl(ns, root, root, (s) => servers.push(s))
-	return servers
+    return servers
 }
 
 /**
@@ -108,7 +108,7 @@ async function scanTreeImpl(ns, server, parent, callback) {
     let m = async function(name) {
         await scanTreeImpl(ns, name, server, callback)
     }
-	let children = await ns.scan(server).filter((value) => value != parent).map(m)
+    let children = await ns.scan(server).filter((value) => value != parent).map(m)
     let n = new Node(server, parent, children)
     if(callback) {
         n.info = await callback(n)

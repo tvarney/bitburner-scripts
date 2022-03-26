@@ -13,7 +13,7 @@
         "noImplicitOverride": true,
         "noImplicitReturns": true,
         "noPropertyAccessFromIndexSignature": true,
-        "noUncheckedIndexedAccess": true,
+        "noUncheckedIndexedAccess": false,
         "noUnusedLocals": true,
         "strict": true,
         "useUnknownInCatchVariables": true,

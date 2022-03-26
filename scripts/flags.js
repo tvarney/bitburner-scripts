@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * A better flag parsing library than `NS.flags`
  * 
@@ -38,32 +40,33 @@
  * 
  * @interface FlagArgParser
  */
+class FlagArgParser {
+	/**
+	 * @returns {number} The number of arguments to expect
+	 */
+	args() { throw new Error("not implemented") }
+
+	/**
+	 * @param {?string} value An initial value to parse if non-null
+	 * @return {any} The initial value to use for a flag of this type
+	 */
+	initialValue(value) { throw new Error("not implemented") }
+
+	/**
+	 * @param {any} current The current accumulated value
+	 * @param {...string} args The arguments to accumulate
+	 * @return {any} The result of accumulating the args
+	 */
+	accumulate(current, ...args) { throw new Error("not implemented") }
+
+	/**
+	 * @return {string}
+	 */
+	argsString() { throw new Error("not implemented") }
+}
 
 /**
- * @function
- * @name FlagArgParser#args
- * @returns {number} The number of arguments to expect
- */
-
-/**
- * @function
- * @name FlagArgParser#initialValue
- * @param {?string} value An initial value to parse if non-null
- * @return {any} The initial value to use for a flag of this type
- */
-
-/**
- * @function
- * @name FlagArgParser#accumulate
- * @param {any} current The current accumulated value
- * @param {...string} args The arguments to accumulate
- * @return {any} The result of accumulating the args
- */
-
-/**
- * @function
- * @name FlagArgParser#argsString
- * @return {string}
+ * @callback FlagAction
  */
 
 /**
@@ -79,7 +82,7 @@
  export class Flag {
 	/**
 	 * @param {string} name The name of the flag
-	 * @param {?Parser} parser The parser
+	 * @param {?FlagArgParser} parser The parser
 	 */
 	constructor(name, parser = null) {
 		this._short = null
@@ -127,7 +130,7 @@
     /**
      * Set the action to take on the flag being called
      * 
-     * @param {function()} fn An action callback which takes no arguments
+     * @param {FlagAction} fn An action callback which takes no arguments
      * @returns {Flag}
      */
     action(fn) {
@@ -188,7 +191,7 @@
 	/**
 	 * Add the given arguments to the data field
 	 * 
-	 * @param {object} data The parsed flags data
+	 * @param {Object<string, any>} data The parsed flags data
 	 * @param {...string} args The args to accumulate
 	 */
 	accumulate(data, ...args) {
@@ -292,7 +295,11 @@ export class NumberParser {
 	 * @return {any} The new value of the flag
 	 */
 	accumulate(current, ...args) {
-		return parseFloat(args[0])
+		const arg = args[0]
+		if(!arg) {
+			throw new Error("missing accumulate value")
+		}
+		return parseFloat(arg)
 	}
 
 	/**
@@ -300,6 +307,9 @@ export class NumberParser {
 	 * @returns {any}
 	 */
 	initialValue(val) {
+		if(val == null) {
+			return null
+		}
 		try {
 			return parseFloat(val)
 		}catch(ex) {
@@ -335,7 +345,11 @@ export class IntegerParser {
 	 * @return {any} The new value of the flag
 	 */
 	accumulate(current, ...args) {
-		return parseInt(args[0])
+		const arg = args[0]
+		if(!arg) {
+			throw new Error("missing accumulate value")
+		}
+		return parseInt(arg)
 	}
 
 	/**
@@ -343,6 +357,9 @@ export class IntegerParser {
 	 * @returns {any}
 	 */
 	initialValue(val) {
+		if(!val) {
+			return null
+		}
 		try {
 			return parseInt(val)
 		}catch(ex) {
@@ -371,11 +388,12 @@ export class Parser {
 	 */
 	constructor(ns, name = null) {
 		this.ns = ns
-		this.description = null
+		this.description = ""
 		this.name = (name == null) ? ns.getScriptName() : name
 		this.flags = [
 			new Flag("help").shortOpt("h").action(() => this.printHelp()).forceExit(true)
 		]
+		this.argsString = ""
         this.exit = true
 	}
 
@@ -438,7 +456,11 @@ export class Parser {
 			msg += reason + "\n\n"
 		}
 		// TODO: add positional arguments to Usage statement
-		msg += "Usage: run " + this.name + " [OPTIONS]\n"
+		msg += "Usage: run " + this.name + " [OPTIONS]"
+		if(this.argsString) {
+			msg += " " + this.argsString
+		}
+		msg += "\n"
 		if(this.description) {
 			msg += "\n" + this.description + "\n"
 		}
@@ -475,6 +497,11 @@ export class Parser {
 		this.ns.tprint(msg)
     }
 
+	/**
+	 * 
+	 * @param {(string|number|boolean)[]} args 
+	 * @returns {{exit: boolean, flags: Object<string,any>, args: string[]}}
+	 */
 	parse(args) {
 		try {
 			let data = this.parseRaw(args)
@@ -502,14 +529,18 @@ export class Parser {
 	/**
 	 * Parse the given arguments, throwing errors on issues
 	 * 
-	 * @param {string[]} args
-	 * @returns {{exit: boolean, flags: Object.<string, number>, args: any[]}}
+	 * @param {(string|number|boolean)[]} args
+	 * @returns {{exit: boolean, flags: Object<string, number>, args: any[]}}
 	 */
 	parseRaw(args) {
 		// Initialize data
+		/** @type {Object<string, any>} */
 		let flagValues = {}
+		/** @type {(string|number|boolean)[]} */
 		let positional = []
+		/** @type {Object<string, Flag>} */
 		let sflags = {}
+		/** @type {Object<string, Flag>} */
 		let lflags = {}
 		for(let f of this.flags) {
 			flagValues[f._long] = f.initialValue()
@@ -522,7 +553,11 @@ export class Parser {
 
         let i = 0
         while(i < args.length) {
-			const arg = args[i]
+			// Work around for the fact that the argument may be a number or
+			// a boolean. Would really prefer that the Bitburner command line
+			// wouldn't pre-parse things for us.
+			const arg = args[i].toString()
+
             // Handle special argument '--'
             if(arg == "--") {
                 for(let j = i + 1; j < args.length; ++j) {
@@ -563,12 +598,14 @@ export class Parser {
                         throw new Error("too few arguments to flag --" + name)
                     }
                     // Otherwise, let the flag 'accumulate' the values
+					/** @type {string[]} */
                     let fArgs = []
-                    if(extra > 0) {
+					if(data != null) {
                         fArgs.push(data)
                     }
                     for(let j = 0; j < nargs-extra; j++) {
-                        fArgs.push(args[i+1+j])
+						// Use toString() to coerce to string
+                        fArgs.push(args[i+1+j].toString())
                     }
                     flag.accumulate(flagValues, ...fArgs)
                     // Move our index to the last arg
@@ -598,9 +635,10 @@ export class Parser {
 					if(nargs > 0) {
 						let extra = (j + 1 < arg.length) ? 1 : 0
 						if(i + 1 + nargs - extra > args.length) {
-							throw new Error("too few arguments to flag --" + name)
+							throw new Error("too few arguments to flag --" + flag._long)
 						}
 
+						/** @type {string[]} */
 						let fArgs = []
 						if(j + 1 < arg.length) {
 							fArgs.push(arg.substring(j+1))
@@ -610,7 +648,7 @@ export class Parser {
 						}
 						// Gather extra flag arguments as needed
 						for(let k = 0; k < nargs-extra; k++) {
-							fArgs.push(args[i+1+k])
+							fArgs.push(args[i+1+k].toString())
 						}
 						flag.accumulate(flagValues, ...fArgs)
 						i += (nargs-extra)

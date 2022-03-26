@@ -12,6 +12,15 @@ const AllPrograms = [
 ]
 
 /**
+ * A list of scripts which are considered libraries and should be copied to all
+ * targets being deployed to.
+ */
+const Libraries = [
+	"/scripts/flags.js",
+	"/scripts/utils.js"
+]
+
+/**
  * Get the set of hacking programs available.
  * 
  * @param {NS} ns 
@@ -112,6 +121,10 @@ async function deploy(ns, hostname, script, args, availProgs, skipPersonal=false
         ns.tprintf("INFO Running %s on %s with %v threads", script, hostname, threads)
         // Copy the script to the given host
         await ns.scp(script, hostname)
+		// TODO: A better way of doing this (discover using regex on script?)
+		for(let lib of Libraries) {
+			await ns.scp(lib, hostname)
+		}
         // Run the script on the host with any extra args
         ns.exec(script, hostname, threads, ...args)
     }else {

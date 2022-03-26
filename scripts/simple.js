@@ -1,51 +1,26 @@
-const fSchema = [
-	['server', 'foodnstuff'],
-	['money-factor', 0.75],
-	['security-offset', 5],
-	['help', false]
-]
-const fHelp = {
-	'server': "The server to hack",
-	'money-factor': "A factor between 0 and 1 of the server maxMoney to grow to",
-	'security-offset': "The amount above server minSecurity to weaken to",
-}
+// @ts-check
 
-/**
- * @param {NS} ns
- * @param {[string, string|number|boolean|string[]]][]} schema
- * @param {object} help
- */
-function printHelp(ns, schema, help) {
-	schema = schema.sort((a, b) => (a[0] < b[0] ? -1 : a[0] == b[0] ? 0 : 1))
-	ns.tprint("Usage: run " + ns.getScriptName())
-	ns.tprint("")
-	ns.tprint("Flags:")
-	for(let f of schema) {
-		const flag = f[0]
-		const def = f[1]
-		ns.tprint("  --" + flag + " <"+ def.constructor.name +"|" + JSON.stringify(def) +">")
-		if(flag in help) {
-			ns.tprint("      " + help[flag])
-		}
-	}
-}
+import * as flags from "scripts/flags.js"
 
 /**
  * @param {NS} ns
  **/
 export async function main(ns) {
-	const data = ns.flags(fSchema)
-	if(data['help']) {
-		printHelp(ns, fSchema, fHelp)
-		ns.exit()
-	}
+	let p = new flags.Parser(ns)
+	p.argsString = "HOSTNAME"
+	p.description = "Run a simple weaken-grow-hack loop against the given server."
 
-	let hostname = data['server']
+	p.number("money-factor").shortOpt('m').default("1.0").help("A factor between 0 and 1 of server maxMoney to grow to")
+	p.integer("security-offset").shortOpt("s").default("5").help("The amount above minSecurity to stop weakening at")
+
+	let data = p.parse(ns.args)
+
+	let hostname = (data.args.length > 0) ? data.args[0] : "self"
 	if(hostname == "self") {
 		hostname = ns.getHostname()
 	}
-	const maxSecurity = ns.getServerMinSecurityLevel(hostname) + data['security-offset']
-	const minMoney = ns.getServerMaxMoney(hostname) * data['money-factor']
+	const maxSecurity = ns.getServerMinSecurityLevel(hostname) + data.flags['security-offset']
+	const minMoney = ns.getServerMaxMoney(hostname) * data.flags['money-factor']
 	while(true) {
 		if(ns.getServerSecurityLevel(hostname) > maxSecurity) {
 			await ns.weaken(hostname)

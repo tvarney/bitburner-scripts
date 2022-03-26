@@ -2,7 +2,21 @@
     "compilerOptions": {
         "allowJs": true,
         "outDir": "./out",
-        "typeRoots": ["./types/"]
+        "typeRoots": ["./types/"],
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
+        "alwaysStrict": true,
+        "exactOptionalPropertyTypes": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "strict": true,
+        "useUnknownInCatchVariables": true,
+        "lib": ["ES2015"]
     },
     "include": [
         "scripts/*",

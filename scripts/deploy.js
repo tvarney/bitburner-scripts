@@ -1,5 +1,8 @@
-import * as flags from "/scripts/flags.js"
-import * as net from "/scripts/net-walk.js"
+// @ts-check
+
+// These need to be converted to absolute paths within Bitburner
+import * as flags from "scripts/flags.js"
+import * as net from "scripts/net-walk.js"
 
 /**
  * The list of all available hacking programs
@@ -20,46 +23,45 @@ function availablePrograms(ns) {
 
 /**
  * @param {NS} ns
- * @param {string} hostname
+ * @param {Server} server
  * @param {string[]} available
  * @returns {boolean} If scripts can be run on the server
  */
-function openServer(ns, hostname, available) {
+function openServer(ns, server, available) {
 	// If it's already open, return true
-	if(ns.hasRootAccess(hostname)) {
+	if(server.hasAdminRights) {
 		return true
 	}
 	// If we don't have the required level, return false
-	if(ns.getServerRequiredHackingLevel(hostname) > ns.getHackingLevel()) {
+	if(server.requiredHackingSkill > ns.getHackingLevel()) {
 		return false
 	}
 	// If we can't open enough ports, return false
-	const nports = ns.getServerNumPortsRequired(hostname)
-	if(available.length < nports) {
+	if(available.length < server.numOpenPortsRequired) {
 		return false
 	}
 	// Open _all_ available ports
 	for(let prog of available) {
 		switch(prog) {
 		case "BruteSSH.exe":
-			ns.brutessh(hostname)
+			ns.brutessh(server.hostname)
 			break
 		case "FTPCrack.exe":
-			ns.ftpcrack(hostname)
+			ns.ftpcrack(server.hostname)
 			break
 		case "relaySMTP.exe":
-			ns.relaysmtp(hostname)
+			ns.relaysmtp(server.hostname)
 			break
 		case "HTTPWorm.exe":
-			ns.httpworm(hostname)
+			ns.httpworm(server.hostname)
 			break
 		case "SQLInject.exe":
-			ns.sqlinject(hostname)
+			ns.sqlinject(server.hostname)
 			break
 		}
 	}
 	// At this point, the server should be nukable, so nuke it and return true
-	ns.nuke(hostname)
+	ns.nuke(server.hostname)
 	return true
 }
 
@@ -72,19 +74,33 @@ function openServer(ns, hostname, available) {
  * @param {boolean} redeploy
  * @param {number} maxThreads
  */
-async function deploy(ns, hostname, script, args, availProgs, redeploy=false, maxThreads=-1) {
+async function deploy(ns, hostname, script, args, availProgs, skipPersonal=false, skipExternal=false, redeploy=false, maxThreads=-1) {
 	const scriptMem = ns.getScriptRam(script)
+	let server = ns.getServer(hostname)
 
 	// If the server isn't open, or can't be opened, skip
-	if(!openServer(ns, hostname, availProgs)) {
+	if(!openServer(ns, server, availProgs)) {
 		return
 	}
+
+	// Skip external or purchased based on flags
+	if(server.purchasedByPlayer && skipPersonal) {
+		ns.tprintf("INFO Skipping %s - purchased by player", server.hostname)
+		return
+	}
+	if(!server.purchasedByPlayer && skipExternal) {
+		ns.tprintf("INFO Skipping %s - not purchased by player", server.hostname)
+		return
+	}
+
 	if(redeploy) {
 		ns.killall(hostname)
+		server = ns.getServer(hostname)
 	}
+
 	// Get server free memory
-    const sMaxMem = ns.getServerMaxRam(hostname)
-    const sUsedMem = ns.getServerUsedRam(hostname)
+    const sMaxMem = server.maxRam
+    const sUsedMem = server.ramUsed
 	const sMem = sMaxMem - sUsedMem
 	// Get threads to run with
 	let threads = Math.floor(sMem / scriptMem)
@@ -111,6 +127,8 @@ export async function main(ns) {
 	p.description = "Deploy a given script with the given arguments"
 	p.flag("redeploy").shortOpt('r')
 	p.number("max-threads").shortOpt('T').default("-1")
+	p.flag("skip-external").shortOpt('E')
+	p.flag("skip-purchased").shortOpt('P')
 
 	let prog = p.parse(ns.args)
 	if(prog.exit) {
@@ -124,12 +142,18 @@ export async function main(ns) {
 
     const available = availablePrograms(ns)
 
-    const script = prog.args.shift()
-	const maxThreads = prog.flags['max-threads']
-	const redeploy = prog.flags['redeploy']
+    const script = String(prog.args.shift())
+	const maxThreads = Number(prog.flags['max-threads'])
+	const redeploy = Boolean(prog.flags['redeploy'])
+	const skipPurchased = Boolean(prog.flags['skip-purchased'])
+	const skipExternal = Boolean(prog.flags['skip-external'])
 	
     ns.tprintf("INFO Deploying %s with args %s", script, JSON.stringify(prog.args))
-	await net.walk(ns, async function(hostname) {
-		await deploy(ns, hostname, script, prog.args, available, redeploy, maxThreads)
-	})
+	/**
+	 * @param {string} hostname
+	 */
+	let walkfn = async function(hostname) {
+		await deploy(ns, hostname, script, prog.args, available, skipPurchased, skipExternal, redeploy, maxThreads)
+	}
+	await net.walk(ns, walkfn)
 }

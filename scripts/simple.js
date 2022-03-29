@@ -1,10 +1,10 @@
 // @ts-check
 
-import * as flags from "scripts/flags.js"
+import * as flags from "lib/flags.js"
 
 /**
  * @param {NS} ns
- **/
+ */
 export async function main(ns) {
     let p = new flags.Parser(ns)
     p.argsString = "HOSTNAME"

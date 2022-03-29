@@ -1,9 +1,9 @@
 // @ts-check
 
 // These need to be converted to absolute paths within Bitburner
-import * as flags from "scripts/flags.js"
-import * as net from "scripts/net-walk.js"
-import * as logging from "scripts/logging.js"
+import * as flags from "lib/flags.js"
+import * as net from "lib/net-walk.js"
+import * as logging from "lib/logging.js"
 
 var tlog = logging.GlobalLogger()
 
@@ -19,9 +19,9 @@ const AllPrograms = [
  * targets being deployed to.
  */
 const Libraries = [
-    "/scripts/flags.js",
-    "/scripts/logging.js",
-    "/scripts/utils.js"
+    "/lib/flags.js",
+    "/lib/logging.js",
+    "/lib/utils.js"
 ]
 
 /**

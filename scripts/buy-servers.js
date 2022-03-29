@@ -1,11 +1,11 @@
 // @ts-check
 
-import * as flags from "scripts/flags.js"
+import * as flags from "lib/flags.js"
 
 import {
     leftpad,
     getThreads
-} from "scripts/utils.js"
+} from "lib/utils.js"
 
 const MaxPower = 20
 
@@ -23,9 +23,9 @@ running it.`
  * targets being deployed to.
  */
 const Libraries = [
-    "/scripts/flags.js",
-    "/scripts/logging.js",
-    "/scripts/utils.js"
+    "/lib/flags.js",
+    "/lib/logging.js",
+    "/lib/utils.js"
 ]
 
 class Purchaser {

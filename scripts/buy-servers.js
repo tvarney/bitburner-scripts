@@ -1,9 +1,9 @@
-import * as flags from "/scripts/flags.js"
+import * as flags from "scripts/flags.js"
 
 import {
     leftpad,
     getThreads
-} from "./utils.js"
+} from "scripts/utils.js"
 
 const MaxPower = 20
 

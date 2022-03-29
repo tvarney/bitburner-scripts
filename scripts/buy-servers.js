@@ -1,3 +1,5 @@
+// @ts-check
+
 import * as flags from "scripts/flags.js"
 
 import {
@@ -6,7 +8,6 @@ import {
 } from "scripts/utils.js"
 
 const MaxPower = 20
-
 
 /**
  * A list of scripts which are considered libraries and should be copied to all
@@ -26,8 +27,11 @@ class Purchaser {
     constructor(ns) {
         this.ns = ns
         this.baseRAM = 8
+        this.maxRAM = -1
         this.basename = "pserve-"
+        /** @type {?string} */
         this.script = null
+        /** @type {string[]} */
         this.args = []
         this.moneyFactor = 0.9
         this.delay = 1000
@@ -77,6 +81,9 @@ class Purchaser {
         for(let ramPower = 4; ramPower < MaxPower; ramPower++) {
             // Get actual RAM value from ramPower
             let ram = Math.pow(2, ramPower)
+            if (this.maxRAM > 0 && ram > this.maxRAM) {
+                break
+            }
 
             // Get threads we can run
             let threads = getThreads(ram, scriptMem, this.maxThreads)
@@ -125,11 +132,12 @@ class Purchaser {
  */
 export async function main(ns) {
     let parser = new flags.Parser(ns)
-    parser.number("money-factor").shortOpt('m').default("0.9")
-    parser.integer("max-threads").shortOpt('T').default("-1")
-    parser.integer("delay").shortOpt('d').default("1000")
-    parser.integer("base-ram").shortOpt('R').default("8")
-    parser.string("base-name").shortOpt('N').default("pserv-")
+    parser.number("money-factor").shortOpt('m').default("0.9").help("Maximum fraction of player money to use")
+    parser.integer("max-threads").shortOpt('T').default("-1").help("Maximum threads to use on server, or -1 for unlimited")
+    parser.integer("delay").shortOpt('d').default("1000").help("Time in ms to sleep while checking money")
+    parser.integer("base-ram").shortOpt('R').default("8").help("Starting RAM for initial server purchases")
+    parser.string("base-name").shortOpt('N').default("pserv-").help("Purchased server base name")
+    parser.integer("max-ram").shortOpt('r').default("-1").help("Maximum server RAM to buy while running this script")
 
     let flagdata = parser.parse(ns.args)
     // Handle args
@@ -137,9 +145,10 @@ export async function main(ns) {
     const scriptargs = flagdata.args
 
     let prog = new Purchaser(ns)
-    prog.script = script
+    prog.script = script ? script : null
     prog.args = scriptargs
     prog.baseRAM = flagdata.flags['base-ram']
+    prog.maxRAM = flagdata.flags['max-ram']
     prog.basename = flagdata.flags['base-name']
     prog.delay = flagdata.flags['delay']
     prog.maxThreads = flagdata.flags['max-threads']

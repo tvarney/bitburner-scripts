@@ -9,6 +9,15 @@ import {
 
 const MaxPower = 20
 
+const helpDesc = `Buy and upgrade personal servers
+
+This will purchase personal servers up to the maximum number that a player is
+allowed to purchase, then upgrade them either to a maximum RAM value of 2^20,
+or the specified amount. If positional arguments are given, the first is
+expected to be a valid script file to be run on the new server, and the
+remaining positional arguments are the arguments to give to that script when
+running it.`
+
 /**
  * A list of scripts which are considered libraries and should be copied to all
  * targets being deployed to.
@@ -132,6 +141,8 @@ class Purchaser {
  */
 export async function main(ns) {
     let parser = new flags.Parser(ns)
+    parser.argsString = "[SCRIPT <...args>]"
+    parser.description = helpDesc
     parser.number("money-factor").shortOpt('m').default("0.9").help("Maximum fraction of player money to use")
     parser.integer("max-threads").shortOpt('T').default("-1").help("Maximum threads to use on server, or -1 for unlimited")
     parser.integer("delay").shortOpt('d').default("1000").help("Time in ms to sleep while checking money")

@@ -7,6 +7,17 @@ import {
 
 const MaxPower = 20
 
+
+/**
+ * A list of scripts which are considered libraries and should be copied to all
+ * targets being deployed to.
+ */
+const Libraries = [
+    "/scripts/flags.js",
+    "/scripts/logging.js",
+    "/scripts/utils.js"
+]
+
 class Purchaser {
     /**
      * 
@@ -51,6 +62,9 @@ class Purchaser {
             this.ns.tprintf("INFO Purchased %v GB server %s", this.baseRAM, newBox)
             if(this.script) {
                 await this.ns.scp(this.script, newBox)
+                for (let lib of Libraries) {
+                    await this.ns.scp(lib, newBox)
+                }
                 this.ns.exec(this.script, newBox, threads, ...this.args)
                 this.ns.tprintf("INFO Exec `%s %s` on %s with %v threads", this.script, JSON.stringify(this.args), newBox, threads)
             }
@@ -95,6 +109,9 @@ class Purchaser {
                 if(this.script) {
                     // Start the script on this server
                     await this.ns.scp(this.script, name)
+                    for(let lib of Libraries) {
+                        await this.ns.scp(lib, name)
+                    }
                     this.ns.exec(this.script, name, threads, ...this.args)
                     this.ns.tprintf("INFO Exec `%s %s` on %s with %v threads", this.script, JSON.stringify(this.args), name, threads)
                 }

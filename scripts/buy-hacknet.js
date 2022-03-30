@@ -17,12 +17,15 @@ upgrade each time.`
  * @returns {{cost: number, action: string, ratio: number, nodeIndex: number}}
  */
 function getPurchaseNodeRatios(ns, baseProd) {
+	if(ns.hacknet.numNodes() > ns.hacknet.maxNumNodes()) {
+		return { cost: Infinity, action: "break", ratio: 0, nodeIndex: -1 }
+	}
 	const cost = ns.hacknet.getPurchaseNodeCost()
 	return {
-		"cost": cost,
-		"action": "purchase",
-		"ratio": baseProd / cost,
-		"nodeIndex": -1,
+		cost: cost,
+		action: "purchase",
+		ratio: baseProd / cost,
+		nodeIndex: -1,
 	}
 }
 
@@ -134,7 +137,8 @@ export async function main(ns) {
 	// The production increase by adding a new hacknet node
 	const BaseProd = hnet.production(1, 1, 1, ProdMult)
 
-	while (true) {
+	let running = true
+	while (running) {
 		let best = getPurchaseNodeRatios(ns, BaseProd)
 		// Make purchasing a server more or less likely, based on purchaseAdjust
 		best.ratio *= purchaseAdjust
@@ -149,7 +153,7 @@ export async function main(ns) {
 
 		// Handle our cost being literally infinite
 		if(best.cost === Infinity) {
-			logger.tInfoV(2, "Cost to purchase upgrade too high; exiting")
+			logger.tInfoV(2, "Cost to upgrade too high; exiting")
 			break
 		}
 
@@ -161,7 +165,7 @@ export async function main(ns) {
 			await ns.sleep(50);
 		}
 		// Perform the best action
-		switch(best.action) {
+		switch (best.action) {
 		case "purchase":
 			logger.tInfoV(2, "Purchasing new node")
 			if(!dryrun) {
@@ -186,12 +190,16 @@ export async function main(ns) {
 				ns.hacknet.upgradeCore(best.nodeIndex, 1)
 			}
 			break
+		case "break":
+			running=false
+			break
 		}
 
 		if(dryrun) {
-			break
+			running = false
+		}else {
+			// Sleep so we don't kill the game
+			await ns.sleep(iterwait);
 		}
-		// Sleep so we don't kill the game
-		await ns.sleep(iterwait);
 	}
 }

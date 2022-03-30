@@ -108,6 +108,7 @@ export async function main(ns) {
 	parser.counter("verbose").shortOpt('v').help("Enable verbose logging")
 	parser.flag("quiet").shortOpt('q').help("Disable logging output")
 	parser.flag("dry-run").shortOpt('D').help("Don't actually perform any actions, just print them out")
+	parser.number("money-factor").shortOpt('M').default("1.0").help("Maximum fraction of player money to use")
 	const argdata = parser.parse(ns.args)
 
 	ns.disableLog("sleep")
@@ -117,6 +118,8 @@ export async function main(ns) {
 	/** @type {number} */
 	const purchaseAdjust = argdata.flags['purchase-adjust']
 	const dryrun = argdata.flags['dry-run']
+	/** @type {number} */
+	const moneyFactor = argdata.flags['money-factor']
 
 	if(argdata.flags['quiet']) {
 		logger.termVerbosity(0)
@@ -153,7 +156,7 @@ export async function main(ns) {
 		if(ns.getPlayer().money < best.cost) {
 			logger.tInfoV(2, "Not enough money for upgrade, waiting until money is available")
 		}
-		while (ns.getPlayer().money < best.cost) {
+		while ((ns.getPlayer().money * moneyFactor) < best.cost) {
 			// While we don't have enough money, wait for 50 ms (updates 20 times a second)
 			await ns.sleep(50);
 		}
